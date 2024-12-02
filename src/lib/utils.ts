@@ -1,10 +1,43 @@
-import { type ClassValue, clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
+import type { ClassValue } from "clsx";
+import { clsx } from "clsx";
 import { cubicOut } from "svelte/easing";
 import type { TransitionConfig } from "svelte/transition";
+import { extendTailwindMerge } from "tailwind-merge";
+import { default as Preset } from 'cmds-tailwind-styles';
+import { createTV } from "tailwind-variants";
 
-export function cn(...inputs: ClassValue[]) {
-	return twMerge(clsx(inputs));
+function flatObject(entry: [string, string | object]) {
+  const [key, value] = entry
+
+  if(typeof value === 'string')
+    return key === 'DEFAULT' ? null : key
+
+  return Object.entries(value).flatMap(flatObject).map(v => key + ( v ? '-'+v : '') )
+}
+
+const colors = Object.entries(Preset.theme.extend.colors).flatMap(flatObject)
+
+const cmTWMergeConfig = {
+  extend: {
+    theme: {
+      colors: colors,
+      spacing: Object.keys(Preset.theme.extend.spacing)
+    },
+    classGroups: {
+      'font-family': [{font:Object.keys(Preset.theme.extend.fontFamily)}], //this is good,
+      'font-size': [{text:Object.keys(Preset.theme.extend.fontSize)}],
+    }
+  }
+} as const
+
+const customTwMerge = extendTailwindMerge(cmTWMergeConfig)
+
+const cmTailwindVariants = createTV({
+  twMergeConfig: cmTWMergeConfig
+})
+
+function cn(...inputs: ClassValue[]) {
+	return customTwMerge(clsx(inputs));
 }
 
 type FlyAndScaleParams = {
@@ -14,10 +47,17 @@ type FlyAndScaleParams = {
 	duration?: number;
 };
 
-export const flyAndScale = (
+function styleToString(style: Record<string, number | string | undefined>): string {
+	return Object.keys(style).reduce((str, key) => {
+		if (style[key] === undefined) return str;
+		return `${str}${key}:${style[key]};`;
+	}, "");
+}
+
+function flyAndScale(
 	node: Element,
 	params: FlyAndScaleParams = { y: -8, x: 0, start: 0.95, duration: 150 }
-): TransitionConfig => {
+): TransitionConfig {
 	const style = getComputedStyle(node);
 	const transform = style.transform === "none" ? "" : style.transform;
 
@@ -35,15 +75,6 @@ export const flyAndScale = (
 		return valueB;
 	};
 
-	const styleToString = (
-		style: Record<string, number | string | undefined>
-	): string => {
-		return Object.keys(style).reduce((str, key) => {
-			if (style[key] === undefined) return str;
-			return str + `${key}:${style[key]};`;
-		}, "");
-	};
-
 	return {
 		duration: params.duration ?? 200,
 		delay: 0,
@@ -54,9 +85,17 @@ export const flyAndScale = (
 
 			return styleToString({
 				transform: `${transform} translate3d(${x}px, ${y}px, 0) scale(${scale})`,
-				opacity: t
+				opacity: t,
 			});
 		},
-		easing: cubicOut
+		easing: cubicOut,
 	};
-};
+}
+
+export {
+  cn,
+  flyAndScale,
+  styleToString,
+  cmTailwindVariants,
+  customTwMerge,
+}
