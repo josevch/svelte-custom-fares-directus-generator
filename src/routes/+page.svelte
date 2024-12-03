@@ -12,8 +12,12 @@
 {value: 'PUJ', label: 'PUJ'}
 
   ];
-
+/** @type {import('./$types').PageData} */
+export let data;
 </script>
+
+<p>{data.customFare}</p>
+
 
 <div class="container mx-auto py-8 ">
     <div class="grid grid-cols-12 grid-rows-2 !pb-8 ">
