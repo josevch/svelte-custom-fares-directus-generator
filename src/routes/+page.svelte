@@ -1,22 +1,10 @@
-<script lang="ts">
-    	import { getTypography } from "$lib/foundations/typography";
-        import * as Select from "$lib/components/ui/select/index.js";
-
-        const destinations = [
- 
-{value: 'SAL', label: 'SAL'},
-{value: 'CUN', label: 'CUN'},
-{value: 'SJO', label: 'SJO'},
-{value: 'XPL', label: 'XPL'},
-{value: 'AUA', label: 'AUA'},
-{value: 'PUJ', label: 'PUJ'}
-
-  ];
-/** @type {import('./$types').PageData} */
-export let data;
+<script>
+	/** @type {import('./$types').PageData} */
+	export let data;
 </script>
 
-<p>{data.customFare}</p>
+
+<h1>{data.custom_fare.origin}</h1>
 
 
 <div class="container mx-auto py-8 ">
