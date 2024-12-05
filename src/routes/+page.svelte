@@ -4,7 +4,9 @@
 </script>
 
 
-<h1>{data.custom_fare.origin}</h1>
+<h1>{data.fare.origin}</h1>
+<h1>{data.fare.destination}</h1>
+<h1>{data.fare.price}</h1>
 
 
 <div class="container mx-auto py-8 ">
