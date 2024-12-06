@@ -1,8 +1,31 @@
 <script>
 	/** @type {import('./$types').PageData} */
 	export let data;
-</script>
+    import { Select } from 'bits-ui';
+    import getDirectusInstance from '$lib/directus';
+    import { readItems } from '@directus/sdk';
 
+    const directus = getDirectusInstance(fetch);
+    const fareRequest = directus.request(readItems('custom_fare', {fields:["*"]}))
+
+ 
+
+
+</script>
+<h1>Custom Fares</h1>
+{#await fareRequest}
+    <div class="">loading</div>
+{:then fares } 
+    {JSON.stringify(fares)}
+    <h2>CF2</h2>
+    {:catch error}
+    {error.toString()}
+    
+
+{/await}
+
+
+<!--
 
 <h1>{data.fare.origin}</h1>
 <h1>{data.fare.destination}</h1>
@@ -128,3 +151,4 @@
 </a>.</p>
 
 </div>
+-->
