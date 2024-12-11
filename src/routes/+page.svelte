@@ -3,4 +3,4 @@
 </script>
 
 
-<Fares  />
+<Fares lang="es" country="pa" campaign="24 Hours Sale" />

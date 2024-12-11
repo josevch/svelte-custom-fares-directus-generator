@@ -1,20 +1,19 @@
+<svelte:options customElement="custom-fare" />
 <script lang="ts">
 	/** @type {import('./$types').PageData} */
 	import { onMount } from 'svelte';
-  import { getTypography } from '$lib/foundations/typography';
+ 	import { getTypography } from '$lib/foundations/typography';
 	import getDirectusInstance from '$lib/directus';
 	import { readItems } from '@directus/sdk';
-  import calendarIcon from '$lib/assets/icons/calendar-icon.svg'
-	import FareSkeleton from './FareSkeleton.svelte';
-	import FareImage from './FareImage.svelte';
+  	import calendarIcon from '$lib/assets/icons/calendar-icon.svg'
 
 	let isLoading = true;
 	let error: string | null = null;
 	let fares: Fares[] = [];
 
-	let lang = 'es';
-	let country = 'co';
-	let campaign = '24 Hours Sale';
+	export let lang = 'es';
+	export let country = 'gs';
+	export let campaign = '24 Hours Sale';
 
 	const destinationQuery = [
 		{ country: [{ translations: ['name'] }] },
@@ -32,6 +31,11 @@
 			]
 		},
 		{ translations: ['name'] }
+	];
+	
+	const conversionQuery = [
+		'rate',
+		'currency',
 	];
 
 	const translationFilter = {
@@ -57,10 +61,10 @@
 			{ origin: destinationQuery },
 			{ destination: destinationQuery },
 			'departure',
-			'departure',
+			'return',
 			'price',
 			'price_before',
-			'taxes'
+			'taxes',
 		],
 		filter: {
 			_and: [
@@ -82,7 +86,8 @@
 					destination_category_id: translationFilter
 				},
 				...translationFilter,
-				country: translationFilter
+				country: translationFilter,
+
 			},
 			destination: {
 				categories: {
@@ -90,7 +95,8 @@
 				},
 				...translationFilter,
 				country: translationFilter
-			}
+			},
+			
 		}
 	};
 
@@ -104,9 +110,14 @@ try {
 
   // El fetch Directus pap
   const [faresData] = await Promise.all([directus.request(readItems('custom_fare', query))]);
+  const [conversionData] = await Promise.all([directus.request(readItems('currency_conversion'))]);
 
   fares = faresData as Fares[];
   console.log('Fares Data:', faresData);
+
+  conversions = [conversionData]
+
+
 } catch (err) {
   error = 'No hay tarifas.';
   console.error(err);
@@ -115,10 +126,9 @@ try {
 }
 });
 
-
 	function formatDateShort(date: string, lang: string): string {
 		const options: Intl.DateTimeFormatOptions = { month: 'short', day: '2-digit', year: 'numeric' };
-		const locale = lang === 'es' ? 'es-ES' : lang === 'en' ? 'en-US' : 'pt-BR';
+		const locale = lang === 'es' ? 'es-419' : lang === 'en' ? 'en-US' : 'pt-BR';
 		// formato encontrado para cambiar la fecha
 		return new Date(date).toLocaleDateString(locale, options).replace('.', '');
 	}
@@ -126,7 +136,28 @@ try {
 
 <div class="container mx-auto py-24">
 	{#if isLoading}
-		<FareSkeleton/>
+	<ol
+	class="skeleton-loader grid justify-center gap-3"
+	style="grid-template-columns: repeat(auto-fit, minmax(399px, 392px));"
+>
+	{#each Array(6) as _}
+		<div class="custom-fares h-full w-full max-w-[400px]">
+			<div
+				class="grid h-40 grid-cols-[8px_116px_auto_8px] grid-rows-[8px_auto_auto_8px] overflow-hidden rounded-2xl outline outline-1 outline-grey-300"
+			>
+				<div
+					class="col-start-1 col-end-3 row-span-full h-full w-full bg-grey-300 object-cover"
+				></div>
+
+				<div class="col-start-3 col-end-3 row-start-2 row-end-2 mx-2 mb-2 flex flex-col gap-1">
+					<div class="h-6 rounded-2xl bg-grey-300"></div>
+					<div class="mt-3 h-3 max-w-40 rounded-2xl bg-grey-300"></div>
+					<div class="mt-0.5 h-3 max-w-24 rounded-2xl bg-grey-300"></div>
+				</div>
+			</div>
+		</div>
+	{/each}
+</ol>
 	{:else if error}
 		<p>{error}</p>
 	{:else if fares.length > 0}
@@ -143,7 +174,14 @@ try {
 						data-departure-date={fare.departure}
 						data-return-date={fare.return}
 						data-price={`USD ${fare.price}`}>
-					<FareImage {fare} />
+
+						<img
+						class="col-start-1 col-end-3 row-span-full h-full w-full object-cover"
+						loading="lazy"
+						src="https://cm-marketing.directus.app/assets/{fare.destination
+						  .main_image}?access_token=td20Cl6zJ-deTLVDB8VgHS6ZGwBrmF6q&format=auto&width=124&height=168"
+						alt={fare.destination}
+						/>
          
 						<span class="col-start-3 col-end-3 row-start-2 row-end-2 mx-2 mb-2 flex flex-col gap-1">
 							<span
@@ -151,8 +189,7 @@ try {
 									'caption',
 									'h4',
 									'flex h-auto flex-col font-gilroy text-primary '
-								)}
-							>
+								)}>
 								<span>
 									{fare.origin.translations[0].name} ({fare.origin.iata_code})
 									{lang === 'es' ? ' a' : lang === 'en' ? ' to' : ' para'}
@@ -205,7 +242,7 @@ try {
 							</span>
 							{#if fare.taxes}
 								<p class={getTypography('body-small')}>
-									<strong>Impuestos incluidos de</strong> ${fare.taxes}
+									<strong>{lang === 'es' ? 'Impuestos incluidos de' : lang === 'en' ? 'Taxes included' : 'Impostos incluídos em'}</strong> ${fare.taxes}
 								</p>
 							{/if}
 						</span>
@@ -214,6 +251,6 @@ try {
 			{/each}
 		</ol>
 	{:else}
-		<p>No fares available.</p>
+		<p></p>
 	{/if}
 </div>
